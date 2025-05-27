@@ -38,3 +38,4 @@ appsettings.*.json
 *.pid
 *.log
 *.DS_Store
+.env
