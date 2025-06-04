@@ -1,4 +1,5 @@
 using boh_api.Data;
+using boh_api.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,8 +11,6 @@ if (string.IsNullOrWhiteSpace(connectionString))
     throw new Exception("Missing DB_CONNECTION_STRING environment variable");
 }
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 // Register DbContext
@@ -20,6 +19,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddScoped<VerbImportService>();
 
 var app = builder.Build();
 
