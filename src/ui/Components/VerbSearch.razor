@@ -1,0 +1,165 @@
+@using ui.Models
+@using ui.Services
+@namespace ui.Components
+@inject VerbService VerbService
+
+<div class="search-container">
+    <div class="input-group mb-3">
+        <select class="form-select" style="max-width: 200px;" @bind="searchType">
+            <option value="name">Search by Name</option>
+            <option value="definition">Search by Definition</option>
+            <option value="tag">Search by Tag</option>
+        </select>
+        <input type="text" class="form-control" placeholder="Search verbs..." @bind="searchTerm" @bind:event="oninput" @onkeyup="HandleSearch" />
+    </div>
+
+    @if (searchResults?.Any() == true)
+    {
+        <div class="search-results">
+            @foreach (var verb in searchResults)
+            {
+                <div class="card mb-3">
+                    <div class="card-body">                        
+                        <h5 class="card-title">@verb.Infinitive</h5>
+                        <p class="card-text">@(verb.Definitions.FirstOrDefault()?.Definition ?? verb.Description)</p>
+                        <div class="tags mb-2">
+                            @foreach (var tag in verb.Tags)
+                            {
+                                <span class="badge bg-primary me-1">@tag.Name</span>
+                            }
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary" @onclick="() => ShowTagManager(verb)">Manage Tags</button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @if (isTagManagerVisible)
+    {
+        <div class="modal" tabindex="-1" style="display: block;">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Manage Tags for @selectedVerb?.Infinitive</h5>
+                        <button type="button" class="btn-close" @onclick="HideTagManager"></button>
+                    </div>
+                    <div class="modal-body">                        <div class="mb-3">
+                            <h6>Current Tags:</h6>
+                            @foreach (var tag in selectedVerb?.Tags ?? new List<Tag>())
+                            {
+                                <span class="badge bg-primary me-1">
+                                    @tag.Name
+                                    <button type="button" class="btn-close btn-close-white btn-sm" @onclick="() => RemoveTag(tag)"></button>
+                                </span>
+                            }
+                        </div>
+                        <div class="mb-3">
+                            <h6>Create New Tag:</h6>
+                            <div class="input-group">
+                                <input type="text" class="form-control" @bind="newTagName" @onkeyup="HandleNewTagKeyPress" placeholder="Enter new tag name..." />
+                                <button class="btn btn-outline-primary" @onclick="CreateAndAddTag" disabled="@string.IsNullOrWhiteSpace(newTagName)">Add</button>
+                            </div>
+                        </div>
+                        <div>
+                            <h6>Available Tags:</h6>
+                            @foreach (var tag in availableTags.Where(t => !selectedVerb?.Tags.Any(vt => vt.Id == t.Id) ?? true))
+                            {
+                                <span class="badge bg-secondary me-1" style="cursor: pointer;" @onclick="() => AddTag(tag)">
+                                    @tag.Name
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-backdrop show"></div>
+    }
+</div>
+
+@code {
+    private string searchTerm = "";
+    private string searchType = "name";
+    private IEnumerable<Verb> searchResults = Array.Empty<Verb>();
+    private bool isTagManagerVisible;
+    private Verb? selectedVerb;
+    private IEnumerable<Tag> availableTags = Array.Empty<Tag>();
+    private string newTagName = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        availableTags = await VerbService.GetTags();
+    }
+
+    private async Task HandleSearch()
+    {
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            searchResults = searchType switch
+            {
+                "name" => await VerbService.SearchVerbsByName(searchTerm),
+                "definition" => await VerbService.SearchVerbsByDefinition(searchTerm),
+                "tag" => await VerbService.SearchVerbsByTag(searchTerm),
+                _ => Array.Empty<Verb>()
+            };
+        }
+        else
+        {
+            searchResults = Array.Empty<Verb>();
+        }
+    }
+
+    private void ShowTagManager(Verb verb)
+    {
+        selectedVerb = verb;
+        isTagManagerVisible = true;
+    }
+
+    private void HideTagManager()
+    {
+        isTagManagerVisible = false;
+        selectedVerb = null;
+    }    
+
+    private async Task AddTag(Tag tag)
+    {
+        if (selectedVerb != null)
+        {
+            await VerbService.AddTag(selectedVerb.Id, tag.Name);
+            selectedVerb.Tags.Add(tag);
+        }
+    }
+
+    private async Task RemoveTag(Tag tag)
+    {
+        if (selectedVerb != null)
+        {
+            await VerbService.RemoveTag(selectedVerb.Id, tag.Name);
+            selectedVerb.Tags.Remove(tag);
+        }
+    }
+
+    private async Task HandleNewTagKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(newTagName))
+        {
+            await CreateAndAddTag();
+        }
+    }
+
+    private async Task CreateAndAddTag()
+    {
+        if (selectedVerb != null && !string.IsNullOrWhiteSpace(newTagName))
+        {
+            await VerbService.AddTag(selectedVerb.Id, newTagName);
+            availableTags = await VerbService.GetTags();
+            var newTag = availableTags.FirstOrDefault(t => t.Name == newTagName);
+            if (newTag != null)
+            {
+                selectedVerb.Tags.Add(newTag);
+            }
+            newTagName = "";
+        }
+    }
+}

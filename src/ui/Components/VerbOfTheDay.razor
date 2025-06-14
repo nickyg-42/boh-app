@@ -1,0 +1,40 @@
+@using ui.Models
+@using ui.Services
+@namespace ui.Components
+
+@inject VerbService VerbService
+
+<div class="card">
+    <div class="card-body">
+        <h3 class="card-title">Verb of the Day</h3>
+        @if (currentVerb == null)
+        {
+            <p>Loading...</p>
+        }
+        else
+        {            <h4>@currentVerb.Infinitive</h4>
+            <p>@(currentVerb.Definitions.FirstOrDefault()?.Definition ?? currentVerb.Description)</p>
+            <div class="tags">
+                @foreach (var tag in currentVerb.Tags)
+                {
+                    <span class="badge bg-primary me-1">@tag.Name</span>
+                }
+            </div>
+            <button class="btn btn-primary mt-3" @onclick="LoadRandomVerb">Next Verb</button>
+        }
+    </div>
+</div>
+
+@code {
+    private Verb? currentVerb;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRandomVerb();
+    }
+
+    private async Task LoadRandomVerb()
+    {
+        currentVerb = await VerbService.GetRandomVerb();
+    }
+}

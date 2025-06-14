@@ -107,9 +107,7 @@ public class VerbsController : ControllerBase
         };
 
         return Ok(JsonSerializer.Serialize(verbs, options));
-    }
-
-    [HttpGet("search/bytag")]
+    }    [HttpGet("search/bytag")]
     public async Task<ActionResult<IEnumerable<Verb>>> SearchVerbsByTag([FromQuery] string tag)
     {
         if (string.IsNullOrWhiteSpace(tag))
@@ -119,16 +117,22 @@ public class VerbsController : ControllerBase
 
         var lowercaseTag = tag.ToLower();
         var verbs = await _context.Verbs
-            .Where(v => v.Tags != null && v.Tags.Any(t => t.Name.Contains(lowercaseTag)))
             .Include(v => v.Conjugations)
             .Include(v => v.Definitions)
             .Include(v => v.Pronunciations)
             .Include(v => v.RelatedWords)
             .Include(v => v.Tags)
+            .Where(v => v.Tags.Any(t => t.Name.ToLower().Contains(lowercaseTag)))
             .Take(10)
             .ToListAsync();
 
-        return Ok(verbs);
+        var options = new JsonSerializerOptions
+        {
+            ReferenceHandler = ReferenceHandler.IgnoreCycles,
+            WriteIndented = true
+        };
+
+        return Ok(JsonSerializer.Serialize(verbs, options));
     }
 
     [HttpGet("{id}")]
@@ -274,5 +278,33 @@ public class VerbsController : ControllerBase
         };
 
         return Ok(JsonSerializer.Serialize(verb, options));
+    }
+
+    [HttpPost("tags/clear-all")]
+    public async Task<IActionResult> ClearAllTags()
+    {
+        // First clear all verb-tag relationships
+        var verbs = await _context.Verbs
+            .Include(v => v.Tags)
+            .ToListAsync();
+
+        foreach (var verb in verbs)
+        {
+            verb.Tags.Clear();
+        }
+
+        // Then delete all tags
+        var tags = await _context.Set<Tag>().ToListAsync();
+        _context.Set<Tag>().RemoveRange(tags);
+
+        await _context.SaveChangesAsync();
+        return Ok("All tags cleared successfully");
+    }
+
+    [HttpGet("tags")]
+    public async Task<IActionResult> GetTags()
+    {
+        var tags = await _context.Set<Tag>().ToListAsync();
+        return Ok(tags);
     }
 }

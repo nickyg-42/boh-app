@@ -1,0 +1,209 @@
+@page "/search"
+@using ui.Models
+@using ui.Services
+@inject VerbService VerbService
+
+<PageTitle>Search Verbs</PageTitle>
+
+<div class="search-container">
+    <div class="search-header">
+        <h1>Search Verbs</h1>
+        <div class="search-type-selector mb-3">
+            <select class="form-select" @bind="searchType">
+                <option value="name">Search by Name</option>
+                <option value="definition">Search by Definition</option>
+                <option value="tag">Search by Tag</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="search-box">
+        <input type="text" 
+               @bind="searchQuery" 
+               @bind:event="oninput" 
+               @onkeyup="HandleSearchKeyPress"
+               placeholder="@GetPlaceholderText()"
+               class="form-control" />
+    </div>
+
+    @if (loading)
+    {
+        <div class="loading-indicator">Searching...</div>
+    }
+    else if (searchResults?.Any() == true)
+    {
+        <div class="search-results">
+            @foreach (var verb in searchResults)
+            {
+                <div class="verb-card">
+                    <h3>@verb.Infinitive</h3>
+                    @if (verb.Definitions?.Any() == true)
+                    {
+                        <div class="definitions">
+                            @foreach (var def in verb.Definitions.Take(2))
+                            {
+                                <p>@def.Definition</p>
+                            }
+                        </div>
+                    }
+                    @if (verb.Tags?.Any() == true)
+                    {
+                        <div class="tags">
+                            @foreach (var tag in verb.Tags)
+                            {
+                                <span class="tag">@tag.Name</span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(searchQuery))
+    {
+        <div class="no-results">No verbs found</div>
+    }
+</div>
+
+@code {    
+    private string searchQuery = "";
+    private string searchType = "name";
+    private List<Verb>? searchResults;
+    private bool loading = false;
+
+    private string GetPlaceholderText()
+    {
+        return searchType switch
+        {
+            "name" => "Enter verb name...",
+            "definition" => "Enter definition text...",
+            "tag" => "Enter tag name...",
+            _ => "Search..."
+        };
+    }
+
+    private async Task HandleSearchKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await PerformSearch();
+        }
+    }    
+
+    private async Task PerformSearch()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery)) return;
+
+        try
+        {
+            loading = true;
+            searchResults = (await (searchType switch
+            {
+                "name" => VerbService.SearchVerbsByName(searchQuery),
+                "definition" => VerbService.SearchVerbsByDefinition(searchQuery),
+                "tag" => VerbService.SearchVerbsByTag(searchQuery),
+                _ => Task.FromResult<IEnumerable<Verb>>(Array.Empty<Verb>())
+            })).ToList();
+        }
+        catch (Exception)
+        {
+            searchResults = null;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}
+
+<style>
+    .search-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .search-header {
+        margin-bottom: 2rem;
+    }
+
+    .search-tabs {
+        display: flex;
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+
+    .tab-button {
+        padding: 0.5rem 1rem;
+        border: none;
+        background: none;
+        border-radius: 4px;
+        cursor: pointer;
+        color: #6c757d;
+        transition: all 0.2s;
+    }
+
+    .tab-button:hover {
+        background: #e9ecef;
+    }
+
+    .tab-button.active {
+        background: #007bff;
+        color: white;
+    }
+
+    .search-box {
+        margin-bottom: 2rem;
+    }
+
+    .verb-card {
+        padding: 1.5rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+    }
+
+    .verb-card h3 {
+        margin: 0 0 1rem 0;
+        color: #2c3e50;
+    }
+
+    .definitions {
+        margin-bottom: 1rem;
+    }
+
+    .definitions p {
+        margin: 0.5rem 0;
+        color: #495057;
+    }
+
+    .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .tag {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background: #e9ecef;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        color: #495057;
+    }
+
+    .loading-indicator {
+        text-align: center;
+        padding: 2rem;
+        color: #6c757d;
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 2rem;
+        color: #6c757d;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+</style>
