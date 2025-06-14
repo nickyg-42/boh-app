@@ -12,15 +12,101 @@
             <p>Loading...</p>
         }
         else
-        {            <h4>@currentVerb.Infinitive</h4>
-            <p>@(currentVerb.Definitions.FirstOrDefault()?.Definition ?? currentVerb.Description)</p>
-            <div class="tags">
-                @foreach (var tag in currentVerb.Tags)
+        {
+            <div class="verb-header mb-4">
+                <h2 class="display-4">@currentVerb.Infinitive</h2>
+                @if (currentVerb.Pronunciations?.Any() == true)
                 {
-                    <span class="badge bg-primary me-1">@tag.Name</span>
+                    <div class="pronunciation text-muted mb-2">
+                        @foreach (var pron in currentVerb.Pronunciations)
+                        {
+                            <span class="me-2">[@pron.Pronunciation]</span>
+                        }
+                    </div>
                 }
+                <div class="tags mb-3">
+                    @foreach (var tag in currentVerb.Tags)
+                    {
+                        <span class="badge bg-primary me-1">@tag.Name</span>
+                    }
+                </div>
             </div>
-            <button class="btn btn-primary mt-3" @onclick="LoadRandomVerb">Next Verb</button>
+
+            @if (currentVerb.Definitions?.Any() == true)
+            {
+                <div class="definitions-section mb-4">
+                    <h5 class="text-muted">Definitions</h5>
+                    <ol class="list-unstyled">
+                        @foreach (var def in currentVerb.Definitions)
+                        {
+                            <li class="mb-2">@def.Definition</li>
+                        }
+                    </ol>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(currentVerb.Etymology))
+            {
+                <div class="etymology-section mb-4">
+                    <h5 class="text-muted">Etymology</h5>
+                    <p>@currentVerb.Etymology</p>
+                </div>
+            }            @if (currentVerb.Conjugations?.Any() == true)
+            {
+                <div class="conjugations-section mb-4">
+                    <h5 class="text-muted">Conjugations</h5>
+                    @{
+                        var groupedConjugations = currentVerb.Conjugations
+                            .GroupBy(c => c.Group)
+                            .OrderBy(g => g.First().GroupSort);
+                    }
+                    <div class="accordion" id="conjugationsAccordion_@currentVerb.Id">
+                        @foreach (var group in groupedConjugations)
+                        {
+                            var groupId = $"collapse_{currentVerb.Id}_{group.Key.Replace(" ", "_")}";
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" 
+                                            data-bs-toggle="collapse" 
+                                            data-bs-target="#@groupId">
+                                        @group.Key
+                                    </button>
+                                </h2>
+                                <div id="@groupId" class="accordion-collapse collapse" data-bs-parent="#conjugationsAccordion_@currentVerb.Id">
+                                    <div class="accordion-body">
+                                        <table class="table table-sm">
+                                            <tbody>
+                                                @foreach (var conj in group.OrderBy(c => c.Sort))
+                                                {
+                                                    <tr>
+                                                        <td class="text-muted" style="width: 40%;">@(conj.Form ?? "")</td>
+                                                        <td>@conj.Value</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (currentVerb.RelatedWords?.Any() == true)
+            {
+                <div class="related-section mb-4">
+                    <h5 class="text-muted">Related Words</h5>
+                    <div>
+                        @foreach (var word in currentVerb.RelatedWords)
+                        {
+                            <span class="badge bg-secondary me-1 mb-1">@word.Word</span>
+                        }
+                    </div>
+                </div>
+            }
+
+            <button class="btn btn-primary" @onclick="LoadRandomVerb">Next Verb</button>
         }
     </div>
 </div>

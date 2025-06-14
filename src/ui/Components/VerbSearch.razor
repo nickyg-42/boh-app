@@ -18,17 +18,107 @@
         <div class="search-results">
             @foreach (var verb in searchResults)
             {
-                <div class="card mb-3">
-                    <div class="card-body">                        
-                        <h5 class="card-title">@verb.Infinitive</h5>
-                        <p class="card-text">@(verb.Definitions.FirstOrDefault()?.Definition ?? verb.Description)</p>
-                        <div class="tags mb-2">
-                            @foreach (var tag in verb.Tags)
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="verb-header mb-3">
+                            <h4 class="card-title">@verb.Infinitive</h4>
+                            @if (verb.Pronunciations?.Any() == true)
                             {
-                                <span class="badge bg-primary me-1">@tag.Name</span>
+                                <div class="pronunciation text-muted mb-2">
+                                    @foreach (var pron in verb.Pronunciations)
+                                    {
+                                        <span class="me-2">[@pron.Pronunciation]</span>
+                                    }
+                                </div>
                             }
+                            <div class="tags mb-2">
+                                @foreach (var tag in verb.Tags)
+                                {
+                                    <span class="badge bg-primary me-1">@tag.Name</span>
+                                }
+                                <button class="btn btn-sm btn-outline-primary ms-2" @onclick="() => ShowTagManager(verb)">Manage Tags</button>
+                            </div>
                         </div>
-                        <button class="btn btn-sm btn-outline-primary" @onclick="() => ShowTagManager(verb)">Manage Tags</button>
+
+                        @if (verb.Definitions?.Any() == true)
+                        {
+                            <div class="definitions-section mb-3">
+                                <h6 class="text-muted">Definitions</h6>
+                                <ol class="list-unstyled">
+                                    @foreach (var def in verb.Definitions)
+                                    {
+                                        <li class="mb-1">@def.Definition</li>
+                                    }
+                                </ol>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(verb.Etymology))
+                        {
+                            <div class="etymology-section mb-3">
+                                <h6 class="text-muted">Etymology</h6>
+                                <p class="mb-0">@verb.Etymology</p>
+                            </div>
+                        }                        @if (verb.Conjugations?.Any() == true)
+                        {
+                            <div class="conjugations-section">
+                                <button class="btn btn-sm btn-outline-secondary" type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#conjugations_@(verb.Id)">
+                                    Show Conjugations
+                                </button>
+                                <div class="collapse mt-2" id="conjugations_@(verb.Id)">
+                                    @{
+                                        var groupedConjugations = verb.Conjugations
+                                            .GroupBy(c => c.Group)
+                                            .OrderBy(g => g.First().GroupSort);
+                                    }
+                                    <div class="accordion" id="conjugationsAccordion_@(verb.Id)">
+                                        @foreach (var group in groupedConjugations)
+                                        {
+                                            var groupId = $"collapse_{verb.Id}_{group.Key.Replace(" ", "_")}";
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header">
+                                                    <button class="accordion-button collapsed" type="button" 
+                                                            data-bs-toggle="collapse" 
+                                                            data-bs-target="#@(groupId)">
+                                                        @group.Key
+                                                    </button>
+                                                </h2>
+                                                <div id="@(groupId)" class="accordion-collapse collapse" data-bs-parent="#conjugationsAccordion_@(verb.Id)">
+                                                    <div class="accordion-body">
+                                                        <table class="table table-sm">
+                                                            <tbody>
+                                                                @foreach (var conj in group.OrderBy(c => c.Sort))
+                                                                {
+                                                                    <tr>
+                                                                        <td class="text-muted" style="width: 40%;">@(conj.Form ?? "")</td>
+                                                                        <td>@conj.Value</td>
+                                                                    </tr>
+                                                                }
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        @if (verb.RelatedWords?.Any() == true)
+                        {
+                            <div class="related-section mt-3">
+                                <h6 class="text-muted">Related Words</h6>
+                                <div>
+                                    @foreach (var word in verb.RelatedWords)
+                                    {
+                                        <span class="badge bg-secondary me-1 mb-1">@word.Word</span>
+                                    }
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
             }
@@ -44,7 +134,8 @@
                         <h5 class="modal-title">Manage Tags for @selectedVerb?.Infinitive</h5>
                         <button type="button" class="btn-close" @onclick="HideTagManager"></button>
                     </div>
-                    <div class="modal-body">                        <div class="mb-3">
+                    <div class="modal-body">
+                        <div class="mb-3">
                             <h6>Current Tags:</h6>
                             @foreach (var tag in selectedVerb?.Tags ?? new List<Tag>())
                             {

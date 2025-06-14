@@ -1,21 +1,115 @@
 .card {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     border: none;
-    transition: transform 0.2s;
+    transition: all 0.3s ease;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    background: #fff;
 }
 
 .card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+}
+
+.verb-header .display-4 {
+    font-size: 2.5rem;
+    color: #2c3e50;
+}
+
+.pronunciation {
+    font-style: italic;
+    color: #666;
 }
 
 .tags .badge {
     font-size: 0.9em;
     padding: 0.5em 0.7em;
+    margin: 0.2em;
+    transition: all 0.2s ease;
+}
+
+.definitions-section li {
+    position: relative;
+    padding-left: 1.2em;
+    margin-bottom: 0.5em;
+}
+
+.definitions-section li:before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #666;
+}
+
+.etymology-section {
+    font-style: italic;
+    color: #666;
+    background: #f8f9fa;
+    padding: 1em;
+    border-radius: 4px;
+}
+
+.conjugations-section .accordion-button {
+    padding: 0.5rem 1rem;
+    background-color: #f8f9fa;
+    border: none;
+}
+
+.conjugations-section .accordion-button:not(.collapsed) {
+    background-color: #e9ecef;
+    color: #2c3e50;
+}
+
+.conjugations-section .table {
+    margin-bottom: 0;
+}
+
+.conjugations-section .table td {
+    padding: 0.5rem;
 }
 
 .search-container {
     max-width: 800px;
     margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.search-container .input-group {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.search-container .form-control {
+    border: 1px solid #e9ecef;
+    padding: 0.75rem 1rem;
+}
+
+.search-container .form-select {
+    border: 1px solid #e9ecef;
+    padding: 0.75rem 1rem;
+    background-color: #f8f9fa;
+}
+
+.btn-outline-secondary {
+    color: #6c757d;
+    border-color: #ced4da;
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: #fff;
+}
+
+.related-section .badge {
+    font-size: 0.85em;
+    background-color: #6c757d;
+    margin: 0.2em;
+    padding: 0.5em 0.7em;
 }
 
 .modal-backdrop {
