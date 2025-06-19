@@ -1,7 +1,9 @@
 @using ui.Models
 @using ui.Services
+@using System.Text.Json;
 @namespace ui.Components
 @inject VerbService VerbService
+@inject ILogger<VerbSearch> Logger
 
 <div class="search-container">
     <div class="input-group mb-3">
@@ -10,7 +12,20 @@
             <option value="definition">Search by Definition</option>
             <option value="tag">Search by Tag</option>
         </select>
-        <input type="text" class="form-control" placeholder="Search verbs..." @bind="searchTerm" @bind:event="oninput" @onkeyup="HandleSearch" />
+        @if (searchType == "tag")
+        {
+            <select class="form-select" style="max-width: 250px;" @onchange="OnTagChanged">
+                <option value="">Select a tag...</option>
+                @foreach (var tag in availableTags)
+                {
+                    <option value="@tag.Name">@tag.Name</option>
+                }
+            </select>
+        }
+        else
+        {
+            <input type="text" class="form-control" placeholder="Search verbs..." @bind="searchTerm" @bind:event="oninput" @onkeyup="HandleSearch" />
+        }
     </div>
 
     @if (searchResults?.Any() == true)
@@ -34,7 +49,7 @@
                             <div class="tags mb-2">
                                 @foreach (var tag in verb.Tags)
                                 {
-                                    <span class="badge bg-primary me-1">@tag.Name</span>
+                                    <span class="badge me-1" style="background-color: @(GetTagColor(tag)); color: #fff">@tag.Name</span>
                                 }
                                 <button class="btn btn-sm btn-outline-primary ms-2" @onclick="() => ShowTagManager(verb)">Manage Tags</button>
                             </div>
@@ -129,7 +144,7 @@
                             <h6>Current Tags:</h6>
                             @foreach (var tag in selectedVerb?.Tags ?? new List<Tag>())
                             {
-                                <span class="badge bg-primary me-1">
+                                <span class="badge me-1" style="background-color: @(GetTagColor(tag)); color: #fff">
                                     @tag.Name
                                     <button type="button" class="btn-close btn-close-white btn-sm" @onclick="() => RemoveTag(tag)"></button>
                                 </span>
@@ -146,7 +161,7 @@
                             <h6>Available Tags:</h6>
                             @foreach (var tag in availableTags.Where(t => !selectedVerb?.Tags.Any(vt => vt.Id == t.Id) ?? true))
                             {
-                                <span class="badge bg-secondary me-1" style="cursor: pointer;" @onclick="() => AddTag(tag)">
+                                <span class="badge me-1" style="cursor: pointer; background-color: @(GetTagColor(tag)); color: #fff;" @onclick="() => AddTag(tag)">
                                     @tag.Name
                                 </span>
                             }
@@ -160,13 +175,30 @@
 </div>
 
 @code {
-    private string searchTerm = "";
+    private string _searchTerm = "";
+    private string searchTerm
+    {
+        get => _searchTerm;
+        set
+        {
+            if (_searchTerm != value)
+            {
+                _searchTerm = value;
+                _ = HandleSearch();
+            }
+        }
+    }
     private string searchType = "name";
     private IEnumerable<Verb> searchResults = Array.Empty<Verb>();
     private bool isTagManagerVisible;
     private Verb? selectedVerb;
     private IEnumerable<Tag> availableTags = Array.Empty<Tag>();
     private string newTagName = "";
+
+    private readonly string[] TagColors = new[]
+    {
+        "#007bff", "#28a745", "#17a2b8", "#ffc107", "#dc3545", "#6610f2", "#fd7e14", "#20c997", "#6f42c1", "#e83e8c"
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -242,5 +274,18 @@
             }
             newTagName = "";
         }
+    }
+
+    private string GetTagColor(Tag tag)
+    {
+        if (tag == null || string.IsNullOrEmpty(tag.Name)) return TagColors[0];
+        int hash = tag.Name.Aggregate(0, (acc, c) => acc + c);
+        return TagColors[hash % TagColors.Length];
+    }
+
+    private async Task OnTagChanged(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+        await HandleSearch();
     }
 }

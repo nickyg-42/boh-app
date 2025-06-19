@@ -28,8 +28,9 @@
                 <div class="tags mb-3">
                     @foreach (var tag in currentVerb.Tags)
                     {
-                        <span class="badge bg-primary me-1">@tag.Name</span>
+                        <span class="badge me-1" style="background-color: @GetTagColor(tag); color: #fff;">@tag.Name</span>
                     }
+                    <button class="btn btn-sm btn-outline-primary ms-2" @onclick="ShowTagManager">Manage Tags</button>
                 </div>
             </div>
 
@@ -106,16 +107,126 @@
     </div>
 </div>
 
+@if (isTagManagerVisible)
+{
+    <div class="modal" tabindex="-1" style="display: block;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Manage Tags for @currentVerb?.Infinitive</h5>
+                    <button type="button" class="btn-close" @onclick="HideTagManager"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <h6>Current Tags:</h6>
+                        @foreach (var tag in currentVerb?.Tags ?? new List<Tag>())
+                        {
+                            <span class="badge me-1" style="background-color: @GetTagColor(tag); color: #fff;">
+                                @tag.Name
+                                <button type="button" class="btn-close btn-close-white btn-sm" @onclick="() => RemoveTag(tag)"></button>
+                            </span>
+                        }
+                    </div>
+                    <div class="mb-3">
+                        <h6>Create New Tag:</h6>
+                        <div class="input-group">
+                            <input type="text" class="form-control" @bind="newTagName" @onkeyup="HandleNewTagKeyPress" placeholder="Enter new tag name..." />
+                            <button class="btn btn-outline-primary" @onclick="CreateAndAddTag" disabled="@string.IsNullOrWhiteSpace(newTagName)">Add</button>
+                        </div>
+                    </div>
+                    <div>
+                        <h6>Available Tags:</h6>
+                        @foreach (var tag in availableTags.Where(t => !currentVerb?.Tags.Any(vt => vt.Id == t.Id) ?? true))
+                        {
+                            <span class="badge me-1" style="cursor: pointer; background-color: @GetTagColor(tag); color: #fff;" @onclick="() => AddTag(tag)">
+                                @tag.Name
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop show"></div>
+}
+
 @code {
     private Verb? currentVerb;
+
+    private bool isTagManagerVisible;
+    private IEnumerable<Tag> availableTags = Array.Empty<Tag>();
+    private string newTagName = "";
+
+    private readonly string[] TagColors = new[]
+    {
+        "#007bff", "#28a745", "#17a2b8", "#ffc107", "#dc3545", "#6610f2", "#fd7e14", "#20c997", "#6f42c1", "#e83e8c"
+    };
+    private string GetTagColor(Tag tag)
+    {
+        if (tag == null || string.IsNullOrEmpty(tag.Name)) return TagColors[0];
+        int hash = tag.Name.Aggregate(0, (acc, c) => acc + c);
+        return TagColors[hash % TagColors.Length];
+    }
 
     protected override async Task OnInitializedAsync()
     {
         await LoadRandomVerb();
+        availableTags = await VerbService.GetTags();
     }
 
     private async Task LoadRandomVerb()
     {
         currentVerb = await VerbService.GetRandomVerb();
+    }
+
+    private void ShowTagManager()
+    {
+        isTagManagerVisible = true;
+    }
+
+    private void HideTagManager()
+    {
+        isTagManagerVisible = false;
+    }
+
+    private async Task AddTag(Tag tag)
+    {
+        if (currentVerb != null)
+        {
+            await VerbService.AddTag(currentVerb.Id, tag.Name);
+            currentVerb.Tags.Add(tag);
+        }
+    }
+
+    private async Task RemoveTag(Tag tag)
+    {
+        if (currentVerb != null)
+        {
+            await VerbService.RemoveTag(currentVerb.Id, tag.Name);
+            currentVerb.Tags.Remove(tag);
+        }
+    }
+
+    private async Task HandleNewTagKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(newTagName))
+        {
+            await CreateAndAddTag();
+        }
+    }
+
+    private async Task CreateAndAddTag()
+    {
+        if (currentVerb != null && !string.IsNullOrWhiteSpace(newTagName))
+        {
+            await VerbService.AddTag(currentVerb.Id, newTagName);
+            availableTags = await VerbService.GetTags();
+            var newTag = availableTags.FirstOrDefault(t => t.Name == newTagName);
+            if (newTag != null)
+            {
+                currentVerb.Tags.Add(newTag);
+            }
+            newTagName = "";
+        }
     }
 }
