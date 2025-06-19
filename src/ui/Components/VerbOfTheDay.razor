@@ -7,6 +7,7 @@
 <div class="card">
     <div class="card-body">
         <h3 class="card-title">Verb of the Day</h3>
+        <button class="btn btn-primary mb-3" @onclick="LoadRandomVerb">Next Verb</button>
         @if (currentVerb == null)
         {
             <p>Loading...</p>
@@ -101,8 +102,6 @@
                     </div>
                 </div>
             }
-
-            <button class="btn btn-primary" @onclick="LoadRandomVerb">Next Verb</button>
         }
     </div>
 </div>
