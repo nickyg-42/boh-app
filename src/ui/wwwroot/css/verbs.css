@@ -19,7 +19,7 @@
 
 .pronunciation {
     font-style: italic;
-    color: #666;
+    color: #667;
 }
 
 .tags .badge {
@@ -39,12 +39,12 @@
     content: "•";
     position: absolute;
     left: 0;
-    color: #666;
+    color: #667;
 }
 
 .etymology-section {
     font-style: italic;
-    color: #666;
+    color: #667;
     background: #f8f9fa;
     padding: 1em;
     border-radius: 4px;
