@@ -38,3 +38,32 @@ package-lock.json
 
 # MSBuild Binary Log
 *.binlog
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# VSCode
+.vscode/
+
+# Node
+node_modules/
+
+# Build output
+dist/
+wwwroot/lib/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Others
+.env
+secrets.json
