@@ -50,23 +50,40 @@
     border-radius: 4px;
 }
 
-.conjugations-section .accordion-button {
-    padding: 0.5rem 1rem;
-    background-color: #f8f9fa;
-    border: none;
+.conjugations-section {
+    margin-bottom: 2rem;
 }
 
-.conjugations-section .accordion-button:not(.collapsed) {
-    background-color: #e9ecef;
-    color: #2c3e50;
+.conjugation-group-card {
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(44,62,80,0.06);
+    background: #f9fafd;
+    transition: box-shadow 0.2s;
 }
 
-.conjugations-section .table {
+.conjugation-group-card:hover {
+    box-shadow: 0 4px 16px rgba(44,62,80,0.13);
+}
+
+.conjugation-group-card .card-header {
+    font-size: 1.1rem;
+    letter-spacing: 0.01em;
+    background: #f4f7fb;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.conjugation-group-card .table {
     margin-bottom: 0;
 }
 
-.conjugations-section .table td {
-    padding: 0.5rem;
+.conjugation-group-card .table td {
+    padding: 0.4rem 0.5rem;
+    vertical-align: middle;
+}
+
+.conjugation-group-card .table tr:not(:last-child) td {
+    border-bottom: 1px solid #f0f0f0;
 }
 
 .search-container {
@@ -119,4 +136,10 @@
 .btn-close-white {
     font-size: 0.7rem;
     margin-left: 5px;
+}
+
+@media (max-width: 767.98px) {
+    .conjugation-group-card {
+        margin-bottom: 1rem;
+    }
 }
