@@ -1,4 +1,5 @@
 @page "/search"
+@using System.Threading
 @using ui.Models
 @using ui.Services
 @inject VerbService VerbService
@@ -10,7 +11,7 @@
     <div class="search-header">
         <h1>Search Verbs</h1>
         <div class="search-type-selector mb-3">
-            <select class="form-select" @bind="searchType">
+            <select class="form-select" @onchange="SearchTypeChanged">
                 <option value="name">Search by Name</option>
                 <option value="definition">Search by Definition</option>
                 <option value="tag">Search by Tag</option>
@@ -19,12 +20,27 @@
     </div>
 
     <div class="search-box">
-        <input type="text" 
-               @bind="searchQuery" 
-               @bind:event="oninput" 
-               @onkeyup="HandleSearchKeyPress"
-               placeholder="@GetPlaceholderText()"
-               class="form-control" />
+        @if (searchType == "tag")
+        {
+            <div class="input-group">
+                <select class="form-select" @bind="searchQuery">
+                    <option value="">Select a tag</option>
+                    @foreach (var tag in availableTags)
+                    {
+                        <option value="@tag.Name">@tag.Name</option>
+                    }
+                </select>
+                <button class="btn btn-primary" @onclick="PerformSearch">Search</button>
+            </div>
+        }
+        else
+        {
+            <input type="text" 
+                   value="@searchQuery"
+                   @oninput="OnSearchInput"
+                   placeholder="@GetPlaceholderText()"
+                   class="form-control" />
+        }
     </div>
 
     @if (loading)
@@ -44,6 +60,15 @@
                             <button class="btn btn-sm btn-success ms-2" @onclick="() => TakeQuiz(verb)">Take a Quiz</button>
                         </div>
                     </div>
+                    @if (verb.Pronunciations?.Any() == true)
+                    {
+                        <div class="pronunciation text-muted mb-2">
+                            @foreach (var pron in verb.Pronunciations)
+                            {
+                                <span class="me-2">[@pron.Pronunciation]</span>
+                            }
+                        </div>
+                    }
                     @if (verb.Definitions?.Any() == true)
                     {
                         <div class="definitions">
@@ -51,6 +76,13 @@
                             {
                                 <p>@def.Definition</p>
                             }
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(verb.Etymology))
+                    {
+                        <div class="etymology-section mb-4">
+                            <h5 class="text-muted">Etymology</h5>
+                            <p>@verb.Etymology</p>
                         </div>
                     }
                     @if (verb.Tags?.Any() == true)
@@ -96,6 +128,18 @@
                                             </div>
                                         </div>
                                     </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    @if (verb.RelatedWords?.Any() == true)
+                    {
+                        <div class="related-section mb-4">
+                            <h5 class="text-muted">Related Words</h5>
+                            <div>
+                                @foreach (var word in verb.RelatedWords)
+                                {
+                                    <span class="badge bg-secondary me-1 mb-1">@word.Word</span>
                                 }
                             </div>
                         </div>
@@ -240,6 +284,13 @@
         }
     }
 
+    private void SearchTypeChanged(ChangeEventArgs e)
+    {
+        searchType = e.Value.ToString();
+        searchQuery = "";
+        searchResults = null;
+    }
+
     private string GetPlaceholderText()
     {
         return searchType switch
@@ -251,13 +302,18 @@
         };
     }
 
-    private async Task HandleSearchKeyPress(KeyboardEventArgs e)
+    private Timer? _debounceTimer;
+
+    private void OnSearchInput(ChangeEventArgs e)
     {
-        if (e.Key == "Enter")
+        searchQuery = e.Value?.ToString() ?? "";
+        _debounceTimer?.Dispose();
+        _debounceTimer = new Timer(async _ =>
         {
             await PerformSearch();
-        }
-    }    
+            await InvokeAsync(StateHasChanged);
+        }, null, 500, Timeout.Infinite);
+    }
 
     private async Task PerformSearch()
     {
