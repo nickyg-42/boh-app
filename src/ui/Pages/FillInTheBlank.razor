@@ -9,6 +9,58 @@
     <div class="fill-in-the-blank-container">
         <h1 class="mb-4">Fill in the Blank</h1>
 
+        <!-- Verb Info Section (mirroring Verb of the Day) -->
+        @if (verb != null)
+        {
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="verb-header mb-3">
+                        <h2 class="display-4">@verb.Infinitive</h2>
+                        @if (verb.Pronunciations?.Any() == true)
+                        {
+                            <div class="pronunciation text-muted mb-2">
+                                @foreach (var pron in verb.Pronunciations)
+                                {
+                                    <span class="me-2">[@pron.Pronunciation]</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                    @if (verb.Definitions?.Any() == true)
+                    {
+                        <div class="definitions-section mb-3">
+                            <h5 class="text-muted">Definitions</h5>
+                            <ol class="list-unstyled">
+                                @foreach (var def in verb.Definitions)
+                                {
+                                    <li class="mb-2">@def.Definition</li>
+                                }
+                            </ol>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(verb.Etymology))
+                    {
+                        <div class="etymology-section mb-3">
+                            <h5 class="text-muted">Etymology</h5>
+                            <p>@verb.Etymology</p>
+                        </div>
+                    }
+                    @if (verb.RelatedWords?.Any() == true)
+                    {
+                        <div class="related-section mb-2">
+                            <h5 class="text-muted">Related Words</h5>
+                            <div>
+                                @foreach (var word in verb.RelatedWords)
+                                {
+                                    <span class="badge bg-secondary me-1 mb-1">@word.Word</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
         @if (VerbId == 0)
         {
             <div class="alert alert-info">
