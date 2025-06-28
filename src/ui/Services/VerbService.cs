@@ -17,6 +17,11 @@ public class VerbService
         return await _http.GetFromJsonAsync<Verb>("api/verbs/random");
     }
 
+    public async Task<Verb?> GetVerbById(int id)
+    {
+        return await _http.GetFromJsonAsync<Verb>($"api/verbs/{id}");
+    }
+
     public async Task<IEnumerable<Verb>> SearchVerbsByName(string name)
     {
         return await _http.GetFromJsonAsync<IEnumerable<Verb>>($"api/verbs/search/byname?name={name}") ?? Array.Empty<Verb>();

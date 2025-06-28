@@ -1,0 +1,157 @@
+@page "/fill-in-the-blank"
+@page "/fill-in-the-blank/{VerbId:int}"
+@using ui.Models
+@using ui.Services
+@inject VerbService VerbService
+@inject NavigationManager NavigationManager
+
+<div class="container mt-4">
+    <div class="fill-in-the-blank-container">
+        <h1 class="mb-4">Fill in the Blank</h1>
+
+        @if (VerbId == 0)
+        {
+            <div class="alert alert-info">
+                Please select a verb from the "Verb of the Day" or "Search Verbs" page to start a quiz.
+            </div>
+        }
+        else if (verb == null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else
+        {
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">@verb.Infinitive</h2>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <button class="btn btn-primary me-2" @onclick="CheckAnswers">Check</button>
+                        <button class="btn btn-secondary me-2" @onclick="GiveUp">Give Up</button>
+                        <button class="btn btn-danger" @onclick="ClearAnswers">Clear</button>
+                    </div>
+                    <div class="conjugations">
+                        <div class="row">
+                            @foreach (var conjugationGroup in verb.Conjugations.GroupBy(c => c.Group))
+                            {
+                                <div class="col-md-6 col-lg-4 mb-4">
+                                    <div class="conjugation-group">
+                                        <h5>@conjugationGroup.Key</h5>
+                                        @foreach (var conjugation in conjugationGroup)
+                                        {
+                                            <div class="form-group row mb-2">
+                                                <label class="col-sm-5 col-form-label">@conjugation.Form</label>
+                                                <div class="col-sm-7">
+                                                    <input @bind="userAnswers[conjugation.Id]" class="form-control @GetInputClass(conjugation.Id)" />
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    @if (showResult)
+                    {
+                        <div class="mt-3">
+                            @if (allCorrect)
+                            {
+                                <div class="alert alert-success">All correct!</div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning">Some answers are incorrect.</div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int VerbId { get; set; }
+
+    private Verb? verb;
+    private Dictionary<int, string> userAnswers = new Dictionary<int, string>();
+    private Dictionary<int, bool?> answerStatus = new Dictionary<int, bool?>();
+    private bool allCorrect = false;
+    private bool showResult = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (VerbId != 0)
+        {
+            verb = await VerbService.GetVerbById(VerbId);
+            if (verb != null)
+            {
+                foreach (var conjugation in verb.Conjugations)
+                {
+                    userAnswers[conjugation.Id] = "";
+                    answerStatus[conjugation.Id] = null;
+                }
+            }
+        }
+    }
+
+    private void CheckAnswers()
+    {
+        if (verb == null) return;
+
+        allCorrect = true;
+        showResult = true;
+        foreach (var conjugation in verb.Conjugations)
+        {
+            if (userAnswers.TryGetValue(conjugation.Id, out var userAnswer) && userAnswer.Equals(conjugation.Value, StringComparison.OrdinalIgnoreCase))
+            {
+                answerStatus[conjugation.Id] = true;
+            }
+            else
+            {
+                answerStatus[conjugation.Id] = false;
+                allCorrect = false;
+            }
+        }
+    }
+
+    private void GiveUp()
+    {
+        if (verb == null) return;
+
+        showResult = false;
+        foreach (var conjugation in verb.Conjugations)
+        {
+            userAnswers[conjugation.Id] = conjugation.Value;
+            answerStatus[conjugation.Id] = null;
+        }
+    }
+
+    private void ClearAnswers()
+    {
+        if (verb == null) return;
+
+        showResult = false;
+        foreach (var conjugation in verb.Conjugations)
+        {
+            userAnswers[conjugation.Id] = "";
+            answerStatus[conjugation.Id] = null;
+        }
+    }
+
+    private string GetInputClass(int conjugationId)
+    {
+        if (answerStatus.TryGetValue(conjugationId, out var isCorrect))
+        {
+            return isCorrect switch
+            {
+                true => "is-valid",
+                false => "is-invalid",
+                _ => ""
+            };
+        }
+        return "";
+    }
+}

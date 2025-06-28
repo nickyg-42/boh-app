@@ -2,6 +2,7 @@
 @using ui.Models
 @using ui.Services
 @inject VerbService VerbService
+@inject NavigationManager NavigationManager
 
 <PageTitle>Search Verbs</PageTitle>
 
@@ -36,7 +37,13 @@
             @foreach (var verb in searchResults)
             {
                 <div class="verb-card">
-                    <h3>@verb.Infinitive</h3>
+                    <div class="d-flex justify-content-between">
+                        <h3>@verb.Infinitive</h3>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary ms-2" @onclick="() => ShowTagManager(verb)">Manage Tags</button>
+                            <button class="btn btn-sm btn-success ms-2" @onclick="() => TakeQuiz(verb)">Take a Quiz</button>
+                        </div>
+                    </div>
                     @if (verb.Definitions?.Any() == true)
                     {
                         <div class="definitions">
@@ -51,8 +58,46 @@
                         <div class="tags">
                             @foreach (var tag in verb.Tags)
                             {
-                                <span class="tag">@tag.Name</span>
+                                <span class="badge me-1" style="background-color: @GetTagColor(tag); color: #fff;">@tag.Name</span>
                             }
+                        </div>
+                    }
+
+                    @if (verb.Conjugations?.Any() == true)
+                    {
+                        <div class="conjugations-section mb-4">
+                            <h5 class="text-muted">Conjugations</h5>
+                            @{
+                                var groupedConjugations = verb.Conjugations
+                                    .GroupBy(c => c.Group)
+                                    .OrderBy(g => g.First().GroupSort)
+                                    .ToList();
+                            }
+                            <div class="row g-3">
+                                @foreach (var group in groupedConjugations)
+                                {
+                                    <div class="col-12 col-md-6 col-lg-4">
+                                        <div class="conjugation-group-card card h-100">
+                                            <div class="card-header bg-light fw-bold text-primary">@group.Key</div>
+                                            <div class="card-body p-2">
+                                                <table class="table table-sm mb-0">
+                                                    <tbody>
+                                                        @foreach (var conj in group.OrderBy(c => c.Sort))
+                                                        {
+                                                            <tr>
+                                                                <td class="text-muted" style="width: 45%;">
+                                                                    @conj.Form
+                                                                </td>
+                                                                <td>@conj.Value</td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
                         </div>
                     }
                 </div>
@@ -65,11 +110,135 @@
     }
 </div>
 
+@if (isTagManagerVisible)
+{
+    <div class="modal" tabindex="-1" style="display: block;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Manage Tags for @selectedVerb?.Infinitive</h5>
+                    <button type="button" class="btn-close" @onclick="HideTagManager"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <h6>Current Tags:</h6>
+                        @foreach (var tag in selectedVerb?.Tags ?? new List<Tag>())
+                        {
+                            <span class="badge me-1" style="background-color: @GetTagColor(tag); color: #fff;">
+                                @tag.Name
+                                <button type="button" class="btn-close btn-close-white btn-sm" @onclick="() => RemoveTag(tag)"></button>
+                            </span>
+                        }
+                    </div>
+                    <div class="mb-3">
+                        <h6>Create New Tag:</h6>
+                        <div class="input-group">
+                            <input type="text" class="form-control" @bind="newTagName" @onkeyup="HandleNewTagKeyPress" placeholder="Enter new tag name..." />
+                            <button class="btn btn-outline-primary" @onclick="CreateAndAddTag" disabled="@string.IsNullOrWhiteSpace(newTagName)">Add</button>
+                        </div>
+                    </div>
+                    <div>
+                        <h6>Available Tags:</h6>
+                        @foreach (var tag in availableTags.Where(t => !selectedVerb?.Tags.Any(vt => vt.Id == t.Id) ?? true))
+                        {
+                            <span class="badge me-1" style="cursor: pointer; background-color: @GetTagColor(tag); color: #fff;" @onclick="() => AddTag(tag)">
+                                @tag.Name
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop show"></div>
+}
+
 @code {    
     private string searchQuery = "";
     private string searchType = "name";
     private List<Verb>? searchResults;
     private bool loading = false;
+    private Verb? selectedVerb;
+    private bool isTagManagerVisible;
+    private IEnumerable<Tag> availableTags = Array.Empty<Tag>();
+    private string newTagName = "";
+
+    private readonly string[] TagColors = new[]
+    {
+        "#007bff", "#28a745", "#17a2b8", "#ffc107", "#dc3545", "#6610f2", "#fd7e14", "#20c997", "#6f42c1", "#e83e8c"
+    };
+    private string GetTagColor(Tag tag)
+    {
+        if (tag == null || string.IsNullOrEmpty(tag.Name)) return TagColors[0];
+        int hash = tag.Name.Aggregate(0, (acc, c) => acc + c);
+        return TagColors[hash % TagColors.Length];
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        availableTags = await VerbService.GetTags();
+    }
+
+    private void ShowTagManager(Verb verb)
+    {
+        selectedVerb = verb;
+        isTagManagerVisible = true;
+    }
+
+    private void HideTagManager()
+    {
+        isTagManagerVisible = false;
+        selectedVerb = null;
+    }
+
+    private void TakeQuiz(Verb verb)
+    {
+        if (verb != null)
+        {
+            NavigationManager.NavigateTo($"/fill-in-the-blank/{verb.Id}");
+        }
+    }
+
+    private async Task AddTag(Tag tag)
+    {
+        if (selectedVerb != null)
+        {
+            await VerbService.AddTag(selectedVerb.Id, tag.Name);
+            selectedVerb.Tags.Add(tag);
+        }
+    }
+
+    private async Task RemoveTag(Tag tag)
+    {
+        if (selectedVerb != null)
+        {
+            await VerbService.RemoveTag(selectedVerb.Id, tag.Name);
+            selectedVerb.Tags.Remove(tag);
+        }
+    }
+
+    private async Task HandleNewTagKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(newTagName))
+        {
+            await CreateAndAddTag();
+        }
+    }
+
+    private async Task CreateAndAddTag()
+    {
+        if (selectedVerb != null && !string.IsNullOrWhiteSpace(newTagName))
+        {
+            await VerbService.AddTag(selectedVerb.Id, newTagName);
+            availableTags = await VerbService.GetTags();
+            var newTag = availableTags.FirstOrDefault(t => t.Name == newTagName);
+            if (newTag != null)
+            {
+                selectedVerb.Tags.Add(newTag);
+            }
+            newTagName = "";
+        }
+    }
 
     private string GetPlaceholderText()
     {
@@ -118,7 +287,6 @@
 
 <style>
     .search-container {
-        max-width: 800px;
         margin: 0 auto;
         padding: 20px;
     }
@@ -205,5 +373,14 @@
         color: #6c757d;
         background: #f8f9fa;
         border-radius: 8px;
+    }
+
+    .conjugation-group-card .card-header {
+        font-size: 0.9rem;
+    }
+
+    .conjugation-group-card .table td {
+        font-size: 0.85rem;
+        padding: 0.3rem;
     }
 </style>

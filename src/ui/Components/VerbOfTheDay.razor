@@ -3,11 +3,19 @@
 @namespace ui.Components
 
 @inject VerbService VerbService
+@inject VerbOfTheDayStateService VerbOfTheDayState
+@inject NavigationManager NavigationManager
 
 <div class="card">
     <div class="card-body">
         <h3 class="card-title">Verb of the Day</h3>
-        <button class="btn btn-primary mb-3" @onclick="LoadRandomVerb">Next Verb</button>
+        <div class="d-flex justify-content-between mb-3">
+            <button class="btn btn-primary" @onclick="LoadNextVerb">Next Verb</button>
+            @if (currentVerb != null)
+            {
+                <button class="btn btn-success" @onclick="TakeQuiz">Take a Quiz</button>
+            }
+        </div>
         @if (currentVerb == null)
         {
             <p>Loading...</p>
@@ -151,7 +159,7 @@
 }
 
 @code {
-    private Verb? currentVerb;
+    private Verb? currentVerb => VerbOfTheDayState.CurrentVerb;
 
     private bool isTagManagerVisible;
     private IEnumerable<Tag> availableTags = Array.Empty<Tag>();
@@ -170,13 +178,21 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadRandomVerb();
+        await VerbOfTheDayState.LoadVerbOfTheDay();
         availableTags = await VerbService.GetTags();
     }
 
-    private async Task LoadRandomVerb()
+    private async Task LoadNextVerb()
     {
-        currentVerb = await VerbService.GetRandomVerb();
+        await VerbOfTheDayState.LoadNextVerb();
+    }
+
+    private void TakeQuiz()
+    {
+        if (currentVerb != null)
+        {
+            NavigationManager.NavigateTo($"/fill-in-the-blank/{currentVerb.Id}");
+        }
     }
 
     private void ShowTagManager()
