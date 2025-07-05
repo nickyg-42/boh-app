@@ -24,7 +24,6 @@ bld/
 *.sln.docstates
 
 # Blazor WebAssembly
-wwwroot/dist/
 .DS_Store
 *.local.json
 .env
@@ -54,7 +53,6 @@ obj/
 node_modules/
 
 # Build output
-dist/
 
 # Logs
 *.log
