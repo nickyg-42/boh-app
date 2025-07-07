@@ -1,0 +1,36 @@
+name: Deploy to Raspberry Pi
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Stop Services
+        run: |
+          sudo systemctl stop boh-api
+          sudo systemctl stop boh-ui
+
+      - name: Publish API
+        run: |
+          dotnet publish src/api/boh-api.csproj -c Release -o /home/birdman/boh-app/publish/api
+
+      - name: Publish UI
+        run: |
+          dotnet publish src/ui/ui.csproj -c Release -o /home/birdman/boh-app/publish/ui
+
+      - name: Start Services
+        run: |
+          sudo systemctl start boh-api
+          sudo systemctl start boh-ui
