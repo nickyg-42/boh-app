@@ -94,8 +94,9 @@
                                         {
                                             <div class="form-group row mb-2">
                                                 <label class="col-sm-5 col-form-label">@conjugation.Form</label>
-                                                <div class="col-sm-7">
+                                                <div class="col-sm-7 d-flex align-items-center">
                                                     <input @bind="userAnswers[conjugation.Id]" class="form-control @GetInputClass(conjugation.Id)" />
+                                                    <button type="button" class="btn btn-link btn-sm ms-2" @onclick="() => RevealConjugation(conjugation.Id)" disabled="@revealedConjugations.Contains(conjugation.Id)">Reveal</button>
                                                 </div>
                                             </div>
                                         }
@@ -130,6 +131,7 @@
     private Verb? verb;
     private Dictionary<int, string> userAnswers = new Dictionary<int, string>();
     private Dictionary<int, bool?> answerStatus = new Dictionary<int, bool?>();
+    private HashSet<int> revealedConjugations = new HashSet<int>();
     private bool allCorrect = false;
     private bool showResult = false;
 
@@ -179,6 +181,7 @@
             userAnswers[conjugation.Id] = conjugation.Value;
             answerStatus[conjugation.Id] = null;
         }
+        revealedConjugations.Clear();
     }
 
     private void ClearAnswers()
@@ -191,6 +194,7 @@
             userAnswers[conjugation.Id] = "";
             answerStatus[conjugation.Id] = null;
         }
+        revealedConjugations.Clear();
     }
 
     private string GetInputClass(int conjugationId)
@@ -205,5 +209,16 @@
             };
         }
         return "";
+    }
+
+    private void RevealConjugation(int conjugationId)
+    {
+        if (verb == null) return;
+        var conj = verb.Conjugations.FirstOrDefault(c => c.Id == conjugationId);
+        if (conj != null)
+        {
+            userAnswers[conjugationId] = conj.Value;
+            revealedConjugations.Add(conjugationId);
+        }
     }
 }
