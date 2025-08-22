@@ -1,12 +1,12 @@
-### About
+## About
 dotnet blazor app combined with dotnet web api to help study italian verbs
 
-### Screenshots
+## Screenshots
 Landing page
-<img width="1440" height="765" alt="Screenshot 2025-08-22 at 2 54 18 PM" src="https://github.com/user-attachments/assets/e9368c7e-18ce-4eed-bf7a-ba5fb5673902" />
+<img width="1440" height="764" alt="Screenshot 2025-08-22 at 3 00 02 PM" src="https://github.com/user-attachments/assets/f50dd2a0-4343-49f8-b840-38fb548df2aa" />
 
 Search functionality
 <img width="1440" height="763" alt="Screenshot 2025-08-22 at 2 55 16 PM" src="https://github.com/user-attachments/assets/a9640e5e-dfb1-46de-9f11-588643779ac7" />
 
 Quiz functionality
-<img width="1440" height="766" alt="Screenshot 2025-08-22 at 2 55 44 PM" src="https://github.com/user-attachments/assets/52230a74-c087-4be9-81fe-316d53c35df3" />
+<img width="1440" height="767" alt="Screenshot 2025-08-22 at 3 00 58 PM" src="https://github.com/user-attachments/assets/db392b28-60b8-4674-8f36-0503fe68608e" />
